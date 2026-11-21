@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrainQuest Arcade - Interactive Educational Challenge</title>
+    <!-- Tailwind CSS for rapid, responsive layout utilities -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka for playful arcade headers, Inter for crisp readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom Arcade Styling & Animations */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            --card-bg: rgba(30, 41, 59, 0.85);
+            --card-border: rgba(148, 163, 184, 0.2);
+            --accent-glow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: #f8fafc;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        h1, h2, h3, .arcade-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Animated Floating Background Shapes */
+        .bg-shape {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.45;
+            animation: floatShape 18s infinite alternate ease-in-out;
+        }
+
+        @keyframes floatShape {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, -60px) scale(1.15); }
+        }
+
+        /* Glassmorphic Card Container */
+        .arcade-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Tactile 3D Arcade Buttons */
+        .btn-arcade {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+            position: relative;
+            top: 0;
+        }
+
+        .btn-arcade:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+            filter: brightness(1.08);
+        }
+
+        .btn-arcade:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+        }
+
+        .btn-arcade:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Subject Card Selection Hover */
+        .subject-card {
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+        }
+        .subject-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .subject-card.selected {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.15);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Difficulty Pill Active State */
+        .diff-btn.selected {
+            ring: 2px;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.25);
+        }
+
+        /* Answer Option Feedback Animations */
+        @keyframes pulseSuccess {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .option-correct {
+            background: linear-gradient(135deg, #059669, #10b981) !important;
+            border-color: #34d399 !important;
+            color: white !important;
+            animation: pulseSuccess 0.4s ease;
+        }
+
+        .option-wrong {
+            background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+            border-color: #f87171 !important;
+            color: white !important;
+            animation: shakeError 0.4s ease;
+        }
+
+        .option-eliminated {
+            opacity: 0.22 !important;
+            pointer-events: none;
+            transform: scale(0.97);
+            filter: grayscale(100%);
+        }
+
+        /* Screen Transition Animations */
+        .screen-enter {
+            animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Heart Beat & Lose Animation */
+        @keyframes heartLose {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.3) rotate(-12deg); }
+            100% { transform: scale(0.85); opacity: 0.3; filter: grayscale(100%); }
+        }
+        .heart-lost {
+            animation: heartLose 0.5s forwards;
+        }
+
+        /* Freeze Effect Overlay on Timer */
+        .timer-frozen {
+            background: linear-gradient(90deg, #38bdf8, #bae6fd) !important;
+            box-shadow: 0 0 15px #38bdf8;
+        }
+
+        /* Floating Score Popup */
+        @keyframes floatScore {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            50% { opacity: 1; transform: translateY(-25px) scale(1.15); }
+            100% { opacity: 0; transform: translateY(-45px) scale(1); }
+        }
+        .score-popup {
+            position: absolute;
+            pointer-events: none;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            animation: floatScore 0.9s ease-out forwards;
+            z-index: 50;
+        }
+
+        /* Custom Scrollbar for Review Section */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-3 sm:p-6">
+
+    <!-- Ambient Background Glow Shapes -->
+    <div class="bg-shape w-72 h-72 bg-indigo-600 top-10 left-10"></div>
+    <div class="bg-shape w-96 h-96 bg-fuchsia-600 bottom-10 right-10" style="animation-delay: -5s;"></div>
+    <div class="bg-shape w-64 h-64 bg-cyan-500 top-1/2 left-1/2" style="animation-delay: -10s;"></div>
+
+    <!-- Top Global Bar (Brand + Audio Mute + High Score) -->
+    <header class="w-full max-w-4xl flex items-center justify-between mb-4 px-2">
+        <div class="flex items-center gap-2.5 cursor-pointer" onclick="returnToMenu()">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                <!-- Brain/Lightning SVG Icon -->
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-indigo-200 to-pink-300">
+                    BrainQuest Arcade
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- High Score Badge -->
+            <div class="arcade-panel px-3 py-1.5 rounded-xl flex items-center gap-2 text-sm">
+                <span class="text-amber-400">🏆</span>
+                <span class="text-slate-300 hidden sm:inline">Best:</span>
+                <span id="global-high-score" class="font-bold text-amber-300 arcade-font text-base">0</span>
+            </div>
+
+            <!-- Sound Toggle Button -->
+            <button id="mute-btn" onclick="toggleMute()" title="Toggle Sound Effects" class="arcade-panel p-2.5 rounded-xl hover:bg-slate-700/60 transition text-slate-200">
+                <svg id="icon-sound-on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                </svg>
+                <svg id="icon-sound-off" class="w-5 h-5 hidden text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN GAME CONTAINER -->
+    <main class="w-full max-w-4xl relative">
+
+        <!-- ==========================================
+             SCREEN 1: START / CONFIGURATION MENU
+        =========================================== -->
+        <section id="screen-menu" class="arcade-panel rounded-3xl p-6 sm:p-8 screen-enter">
+            <div class="text-center mb-6">
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 mb-2">
+                    Learn • Compete • Level Up
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mb-2">Choose Your Quest</h2>
+                <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
+                    Select a subject arena and difficulty tier. Build streaks, deploy power-ups, and review explanations to master every topic!
+                </p>
+            </div>
+
+            <!-- Step 1: Subject Selection Grid -->
+            <div class="mb-6">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">1. Select Subject Arena</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" id="subject-grid">
+                    <!-- Math & Logic -->
+                    <button type="button" onclick="selectSubject('math', this)" class="subject-card selected text-left p-4 rounded-2xl bg-slate-800/70 flex items-start gap-3.5">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-2xl shrink-0">
+                            🧮
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white text-lg">Math & Logic</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Algebra, patterns, geometry & mental arithmetic</p>
+                        </div>
+                    </button>
+
+                    <!-- Science & Space -->
+                    <button type="button" onclick="selectSubject('science', this)" class="subject-card text-left p-4 rounded-2xl bg-slate-800/70 flex items-start gap-3.5">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl shrink-0">
+                            🚀
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white text-lg">Science & Space</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Physics, biology, chemistry & astronomy</p>
+                        </div>
+                    </button>
+
+                    <!-- World Geography -->
+                    <button type="button" onclick="selectSubject('geography', this)" class="subject-card text-left p-4 rounded-2xl bg-slate-800/70 flex items-start gap-3.5">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl shrink-0">
+                            🌍
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white text-lg">World Geography</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Capitals, landmarks, oceans & Earth wonders</p>
+                        </div>
+                    </button>
+
+                    <!-- History & Culture -->
+                    <button type="button" onclick="selectSubject('history', this)" class="subject-card text-left p-4 rounded-2xl bg-slate-800/70 flex items-start gap-3.5">
+                        <div class="w-12 h-12 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl shrink-0">
+                            🏛️
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white text-lg">History & Culture</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Ancient civilizations, inventions & world events</p>
+                        </div>
+                    </button>
+
+                    <!-- All-Star Mix -->
+                    <button type="button" onclick="selectSubject('mixed', this)" class="subject-card text-left p-4 rounded-2xl bg-slate-800/70 flex items-start gap-3.5 sm:col-span-2 lg:col-span-2">
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-2xl shrink-0">
+                            🎲
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white text-lg">All-Star Brain Mix</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">A rapid-fire gauntlet combining questions from all four academic subjects!</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Difficulty Selection -->
+            <div class="mb-8">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">2. Select Difficulty Tier</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <button type="button" onclick="selectDifficulty('easy', this)" class="diff-btn selected py-3 px-4 rounded-xl bg-emerald-600/30 border-2 border-emerald-400 text-emerald-200 font-bold text-center transition">
+                        <div class="text-base sm:text-lg arcade-font">Cadet (Easy)</div>
+                        <div class="text-[11px] opacity-80 font-normal">20s Timer • 1.0x Pts</div>
+                    </button>
+                    <button type="button" onclick="selectDifficulty('medium', this)" class="diff-btn py-3 px-4 rounded-xl bg-slate-800/70 border-2 border-slate-700 text-slate-300 font-bold text-center transition hover:border-amber-400/50">
+                        <div class="text-base sm:text-lg arcade-font">Scholar (Med)</div>
+                        <div class="text-[11px] opacity-80 font-normal">15s Timer • 1.5x Pts</div>
+                    </button>
+                    <button type="button" onclick="selectDifficulty('hard', this)" class="diff-btn py-3 px-4 rounded-xl bg-slate-800/70 border-2 border-slate-700 text-slate-300 font-bold text-center transition hover:border-rose-400/50">
+                        <div class="text-base sm:text-lg arcade-font">Genius (Hard)</div>
+                        <div class="text-[11px] opacity-80 font-normal">12s Timer • 2.0x Pts</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Start Button -->
+            <button onclick="startGame()" class="btn-arcade w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-bold text-xl arcade-font tracking-wide shadow-xl flex items-center justify-center gap-3">
+                <span>LAUNCH ARCADE CHALLENGE</span>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                </svg>
+            </button>
+        </section>
+
+        <!-- ==========================================
+             SCREEN 2: ACTIVE GAMEPLAY ARENA
+        =========================================== -->
+        <section id="screen-game" class="hidden arcade-panel rounded-3xl p-5 sm:p-8 relative">
+            
+            <!-- Top HUD: Lives, Progress, Streak, Score -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-700/70">
+                <!-- Hearts / Lives -->
+                <div class="flex items-center gap-1.5" id="lives-container" title="Remaining Lives">
+                    <span class="heart-icon text-2xl transition-all">❤️</span>
+                    <span class="heart-icon text-2xl transition-all">❤️</span>
+                    <span class="heart-icon text-2xl transition-all">❤️</span>
+                </div>
+
+                <!-- Question Counter Pill -->
+                <div class="px-3.5 py-1 rounded-full bg-slate-800 border border-slate-600/60 text-xs sm:text-sm font-semibold text-slate-200">
+                    Question <span id="q-current" class="text-cyan-400 font-bold">1</span> / <span id="q-total">10</span>
+                </div>
+
+                <!-- Streak & Score -->
+                <div class="flex items-center gap-3">
+                    <div id="streak-badge" class="px-3 py-1 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs sm:text-sm font-bold flex items-center gap-1 transition-transform">
+                        <span>🔥</span>
+                        <span id="streak-text">1.0x</span>
+                    </div>
+                    <div class="text-right relative" id="score-container">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Score</div>
+                        <div id="current-score" class="text-xl sm:text-2xl font-bold text-white arcade-font leading-none">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Countdown Timer Bar -->
+            <div class="mt-4 mb-6">
+                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                    <span id="subject-tag" class="text-indigo-300 uppercase tracking-wider">Math & Logic</span>
+                    <span id="timer-text" class="text-slate-300 font-mono">15.0s</span>
+                </div>
+                <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                    <div id="timer-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-500 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- Question Prompt Box -->
+            <div class="mb-6 min-h-[90px] flex flex-col justify-center">
+                <h2 id="question-text" class="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-snug">
+                    Loading question...
+                </h2>
+                <!-- Optional Hint Banner -->
+                <div id="hint-box" class="hidden mt-3 p-3 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 text-sm flex items-start gap-2">
+                    <span class="text-base">💡</span>
+                    <span id="hint-text"></span>
+                </div>
+            </div>
+
+            <!-- Answer Options Grid (2x2 on Desktop, 1 col on Mobile) -->
+            <div id="options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-6">
+                <!-- Buttons injected dynamically via JS -->
+            </div>
+
+            <!-- Instant Explanation Drawer (Appears after answering) -->
+            <div id="feedback-drawer" class="hidden mb-5 p-4 rounded-2xl border transition-all">
+                <div class="flex items-center justify-between mb-1">
+                    <span id="feedback-title" class="font-bold text-base arcade-font"></span>
+                    <span id="feedback-points" class="text-xs font-bold px-2 py-0.5 rounded-md"></span>
+                </div>
+                <p id="feedback-explanation" class="text-sm text-slate-200 leading-relaxed"></p>
+            </div>
+
+            <!-- Bottom Power-Ups & Next Button Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-700/70">
+                <!-- Power-Up Lifelines -->
+                <div class="flex items-center gap-2" id="powerups-bar">
+                    <button id="pu-fifty" onclick="usePowerUp('fifty')" class="btn-arcade px-3 py-2 rounded-xl bg-indigo-600/80 border border-indigo-400/40 text-white text-xs sm:text-sm font-bold flex items-center gap-1.5" title="Eliminate 2 wrong answers">
+                        <span>✂️</span>
+                        <span>50/50</span>
+                        <span id="count-fifty" class="ml-1 px-1.5 py-0.2 bg-slate-900/60 rounded text-xs">1</span>
+                    </button>
+
+                    <button id="pu-freeze" onclick="usePowerUp('freeze')" class="btn-arcade px-3 py-2 rounded-xl bg-cyan-600/80 border border-cyan-400/40 text-white text-xs sm:text-sm font-bold flex items-center gap-1.5" title="Freeze the countdown timer for this question">
+                        <span>❄️</span>
+                        <span>Freeze</span>
+                        <span id="count-freeze" class="ml-1 px-1.5 py-0.2 bg-slate-900/60 rounded text-xs">1</span>
+                    </button>
+
+                    <button id="pu-hint" onclick="usePowerUp('hint')" class="btn-arcade px-3 py-2 rounded-xl bg-amber-600/80 border border-amber-400/40 text-white text-xs sm:text-sm font-bold flex items-center gap-1.5" title="Reveal a helpful clue">
+                        <span>💡</span>
+                        <span>Hint</span>
+                        <span id="count-hint" class="ml-1 px-1.5 py-0.2 bg-slate-900/60 rounded text-xs">1</span>
+                    </button>
+                </div>
+
+                <!-- Next Question Action Button -->
+                <button id="next-btn" onclick="nextQuestion()" class="hidden btn-arcade px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm sm:text-base arcade-font flex items-center gap-2 ml-auto">
+                    <span id="next-btn-label">Next Question</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             SCREEN 3: END-OF-GAME SUMMARY & REVIEW
+        =========================================== -->
+        <section id="screen-summary" class="hidden arcade-panel rounded-3xl p-6 sm:p-8 screen-enter">
+            <div class="text-center mb-6">
+                <div id="summary-badge" class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 text-4xl shadow-lg mb-3">
+                    🏆
+                </div>
+                <h2 id="summary-heading" class="text-3xl sm:text-4xl font-bold text-white">Quest Complete!</h2>
+                <p id="summary-subheading" class="text-slate-300 text-sm sm:text-base mt-1">Here is how you performed in the arena.</p>
+                <div id="new-record-banner" class="hidden mt-3 inline-block px-4 py-1 rounded-full bg-amber-400/20 border border-amber-400 text-amber-300 font-bold text-xs uppercase tracking-wider animate-bounce">
+                    🎉 New Personal High Score!
+                </div>
+            </div>
+
+            <!-- Stats Overview Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl text-center">
+                    <div class="text-xs text-slate-400 uppercase font-bold">Final Score</div>
+                    <div id="stat-score" class="text-2xl sm:text-3xl font-bold text-cyan-400 arcade-font mt-1">0</div>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl text-center">
+                    <div class="text-xs text-slate-400 uppercase font-bold">Accuracy</div>
+                    <div id="stat-accuracy" class="text-2xl sm:text-3xl font-bold text-emerald-400 arcade-font mt-1">0%</div>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl text-center">
+                    <div class="text-xs text-slate-400 uppercase font-bold">Best Streak</div>
+                    <div id="stat-streak" class="text-2xl sm:text-3xl font-bold text-amber-400 arcade-font mt-1">0</div>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl text-center">
+                    <div class="text-xs text-slate-400 uppercase font-bold">Mastery Rank</div>
+                    <div id="stat-rank" class="text-xl sm:text-2xl font-bold text-purple-400 arcade-font mt-1">Scholar</div>
+                </div>
+            </div>
+
+            <!-- Educational Review Log (All Questions + Explanations) -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>📚</span>
+                        <span>Knowledge Review & Explanations</span>
+                    </h3>
+                    <span id="review-filter-label" class="text-xs text-slate-400">Reviewing all answers</span>
+                </div>
+                
+                <div id="review-list" class="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+                    <!-- Review items populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Replay & Menu Action Buttons -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <button onclick="startGame()" class="btn-arcade py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-lg arcade-font flex items-center justify-center gap-2">
+                    <span>🔄</span>
+                    <span>Play Again (Same Settings)</span>
+                </button>
+                <button onclick="returnToMenu()" class="btn-arcade py-3.5 px-6 rounded-2xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-lg arcade-font flex items-center justify-center gap-2">
+                    <span>🏠</span>
+                    <span>Change Subject / Difficulty</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Note -->
+    <footer class="mt-6 text-center text-xs text-slate-400">
+        BrainQuest Arcade • Interactive STEM & Humanities Learning Engine
+    </footer>
+
+    <!-- ==========================================
+         JAVASCRIPT ENGINE (AUDIO, DATA, GAME LOOP)
+    =========================================== -->
+    <script>
+        /**
+         * 1. WEB AUDIO API SYNTHESIZER
+         * Generates crisp, retro-modern arcade sound effects without external audio files.
+         */
+        class ArcadeAudio {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playTone(freq, type, duration, startTime = 0, volume = 0.15) {
+                if (this.muted) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + startTime);
+
+                    gain.gain.setValueAtTime(volume, this.ctx.currentTime + startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + startTime + duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(this.ctx.currentTime + startTime);
+                    osc.stop(this.ctx.currentTime + startTime + duration);
+                } catch (e) {
+                    // Fail silently if browser blocks audio before gesture
+                }
+            }
+
+            click() {
+                this.playTone(520, 'sine', 0.08, 0, 0.1);
+            }
+
+            correct(streak = 1) {
+                const pitchBoost = Math.min(streak * 35, 250);
+                this.playTone(523.25 + pitchBoost, 'triangle', 0.12, 0, 0.18);
+                this.playTone(659.25 + pitchBoost, 'triangle', 0.12, 0.08, 0.18);
+                this.playTone(783.99 + pitchBoost, 'triangle', 0.22, 0.16, 0.2);
+            }
+
+            wrong() {
+                this.playTone(220, 'sawtooth', 0.18, 0, 0.15);
+                this.playTone(165, 'sawtooth', 0.28, 0.14, 0.15);
+            }
+
+            powerup() {
+                this.playTone(440, 'sine', 0.1, 0, 0.15);
+                this.playTone(587.33, 'sine', 0.1, 0.07, 0.15);
+                this.playTone(880, 'sine', 0.2, 0.14, 0.18);
+            }
+
+            tick() {
+                this.playTone(880, 'sine', 0.04, 0, 0.05);
+            }
+
+            gameOver(won) {
+                if (won) {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((n, idx) => this.playTone(n, 'triangle', 0.22, idx * 0.11, 0.2));
+                } else {
+                    const notes = [392.00, 349.23, 329.63, 261.63];
+                    notes.forEach((n, idx) => this.playTone(n, 'sawtooth', 0.25, idx * 0.14, 0.15));
+                }
+            }
+        }
+
+        const sfx = new ArcadeAudio();
+
+        /**
+         * 2. COMPREHENSIVE EDUCATIONAL QUESTION BANK
+         * Categorized by Subject and Difficulty, with Hints and Detailed Explanations.
+         */
+        const QUESTION_BANK = {
+            math: {
+                easy: [
+                    {
+                        q: "What is the value of 3² + 4²?",
+                        options: ["14", "25", "49", "12"],
+                        answer: 1,
+                        hint: "3² means 3 × 3, and 4² means 4 × 4. Add those two results together!",
+                        explanation: "3² = 9 and 4² = 16. Adding them gives 9 + 16 = 25 (which also equals 5², a classic Pythagorean triple!)."
+                    },
+                    {
+                        q: "If a triangle has angles of 50° and 60°, what is the third angle?",
+                        options: ["70°", "80°", "90°", "60°"],
+                        answer: 0,
+                        hint: "All three interior angles inside any flat triangle always add up to 180°.",
+                        explanation: "The sum of angles in a triangle is 180°. Subtracting the known angles: 180° - (50° + 60°) = 70°."
+                    },
+                    {
+                        q: "What is 25% of 80?",
+                        options: ["15", "20", "25", "40"],
+                        answer: 1,
+                        hint: "25% is the exact same as one-quarter (dividing by 4).",
+                        explanation: "25% equals 1/4. Dividing 80 by 4 gives 20."
+                    },
+                    {
+                        q: "Which number comes next in the sequence: 2, 6, 12, 20, 30, ...?",
+                        options: ["36", "40", "42", "44"],
+                        answer: 2,
+                        hint: "Look at the differences between consecutive numbers: +4, +6, +8, +10...",
+                        explanation: "The gap increases by 2 each step (+4, +6, +8, +10, +12). So 30 + 12 = 42."
+                    },
+                    {
+                        q: "Solve for x: 2x + 5 = 19",
+                        options: ["6", "7", "8", "12"],
+                        answer: 1,
+                        hint: "First subtract 5 from both sides, then divide by 2.",
+                        explanation: "Subtracting 5 gives 2x = 14. Dividing both sides by 2 yields x = 7."
+                    },
+                    {
+                        q: "How many sides does a regular hexagon have?",
+                        options: ["5", "6", "7", "8"],
+                        answer: 1,
+                        hint: "Think of the shape of a honeycomb cell made by bees.",
+                        explanation: "The prefix 'hex-' means six, so a hexagon is a 6-sided polygon."
+                    }
+                ],
+                medium: [
+                    {
+                        q: "What is the least common multiple (LCM) of 6 and 8?",
+                        options: ["12", "24", "48", "16"],
+                        answer: 1,
+                        hint: "List the multiples of 8 (8, 16, 24...) until you find one divisible by 6.",
+                        explanation: "Multiples of 6 are 6, 12, 18, 24. Multiples of 8 are 8, 16, 24. The smallest shared multiple is 24."
+                    },
+                    {
+                        q: "A jacket costs $60 and is on sale for 30% off. What is the sale price?",
+                        options: ["$42", "$40", "$18", "$45"],
+                        answer: 0,
+                        hint: "Find 10% of $60 first ($6), multiply by 3 for the discount, then subtract.",
+                        explanation: "30% of $60 is $18. Subtracting the $18 discount from $60 leaves a sale price of $42."
+                    },
+                    {
+                        q: "What is the area of a circle with a radius of 3? (Use π ≈ 3.14)",
+                        options: ["18.84", "28.26", "9.42", "37.68"],
+                        answer: 1,
+                        hint: "Use the formula Area = π × r², where r = 3.",
+                        explanation: "Area = π × r² = 3.14 × 3² = 3.14 × 9 = 28.26."
+                    },
+                    {
+                        q: "If you roll two standard 6-sided dice, what is the probability of rolling a sum of 7?",
+                        options: ["1/6", "1/12", "1/36", "5/36"],
+                        answer: 0,
+                        hint: "There are 36 total combinations, and 6 ways to make 7: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1).",
+                        explanation: "6 favorable outcomes out of 36 total outcomes simplifies to 6/36 = 1/6."
+                    },
+                    {
+                        q: "Simplify: (x³)⁴",
+                        options: ["x⁷", "x¹²", "x⁸¹", "4x³"],
+                        answer: 1,
+                        hint: "When raising a power to another power, multiply the exponents.",
+                        explanation: "By the power rule of exponents, (xᵃ)ᵇ = xᵃˣᵇ. Therefore, 3 × 4 = 12, giving x¹²."
+                    }
+                ],
+                hard: [
+                    {
+                        q: "What is the value of log₂(32)?",
+                        options: ["4", "5", "6", "16"],
+                        answer: 1,
+                        hint: "Ask yourself: 2 raised to what power equals 32?",
+                        explanation: "Since 2 × 2 × 2 × 2 × 2 = 2⁵ = 32, the base-2 logarithm of 32 is 5."
+                    },
+                    {
+                        q: "In a right triangle, if the hypotenuse is 13 and one leg is 5, what is the other leg?",
+                        options: ["8", "10", "12", "11"],
+                        answer: 2,
+                        hint: "Apply a² + b² = c², where c = 13 and a = 5.",
+                        explanation: "5² + b² = 13² → 25 + b² = 169 → b² = 144 → b = 12 (the 5-12-13 Pythagorean triple)."
+                    },
+                    {
+                        q: "How many distinct ways can you arrange the letters in the word 'MATH'?",
+                        options: ["12", "16", "24", "64"],
+                        answer: 2,
+                        hint: "Calculate 4 factorial (4!).",
+                        explanation: "4! = 4 × 3 × 2 × 1 = 24 unique permutations."
+                    },
+                    {
+                        q: "What is the derivative of f(x) = 4x³ - 2x + 7?",
+                        options: ["12x² - 2", "4x² - 2", "12x³ - 2x", "12x² + 7"],
+                        answer: 0,
+                        hint: "Use the power rule: bring the exponent down to multiply, then reduce the exponent by 1.",
+                        explanation: "The derivative of 4x³ is 12x², the derivative of -2x is -2, and the constant 7 becomes 0."
+                    }
+                ]
+            },
+            science: {
+                easy: [
+                    {
+                        q: "Which planet in our solar system is known as the 'Red Planet'?",
+                        options: ["Venus", "Mars", "Jupiter", "Saturn"],
+                        answer: 1,
+                        hint: "Its reddish appearance comes from iron oxide (rust) on its surface.",
+                        explanation: "Mars gets its distinct rusty red color from iron oxide minerals covering its rocky surface."
+                    },
+                    {
+                        q: "What gas do plants absorb from the atmosphere during photosynthesis?",
+                        options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
+                        answer: 2,
+                        hint: "Humans exhale this gas, and plants turn it into glucose and oxygen.",
+                        explanation: "Plants take in Carbon Dioxide (CO₂) and water, using sunlight to produce energy and release Oxygen."
+                    },
+                    {
+                        q: "What is the chemical symbol for water?",
+                        options: ["HO₂", "H₂O", "O₂H", "CO₂"],
+                        answer: 1,
+                        hint: "Each molecule contains two hydrogen atoms and one oxygen atom.",
+                        explanation: "H₂O stands for two Hydrogen atoms bonded to a single Oxygen atom."
+                    },
+                    {
+                        q: "Which organ pumps blood throughout the human body?",
+                        options: ["Lungs", "Liver", "Heart", "Brain"],
+                        answer: 2,
+                        hint: "It beats around 60 to 100 times per minute at rest.",
+                        explanation: "The heart is a muscular organ that circulates oxygenated blood through arteries and veins."
+                    },
+                    {
+                        q: "At standard sea-level pressure, at what temperature does pure water boil?",
+                        options: ["50°C", "90°C", "100°C", "120°C"],
+                        answer: 2,
+                        hint: "The Celsius scale was specifically designed around water's freezing (0°) and boiling points.",
+                        explanation: "Pure water boils at 100°C (212°F) at standard atmospheric pressure."
+                    }
+                ],
+                medium: [
+                    {
+                        q: "Which subatomic particle carries a negative electric charge?",
+                        options: ["Proton", "Neutron", "Electron", "Positron"],
+                        answer: 2,
+                        hint: "These tiny particles orbit around the atomic nucleus.",
+                        explanation: "Electrons carry a negative (-1) charge, protons carry positive (+1), and neutrons are neutral."
+                    },
+                    {
+                        q: "What is the powerhouse of eukaryotic cells that generates ATP energy?",
+                        options: ["Ribosome", "Nucleus", "Mitochondrion", "Golgi Apparatus"],
+                        answer: 2,
+                        hint: "It converts nutrients into usable cellular energy via cellular respiration.",
+                        explanation: "Mitochondria generate most of the cell's supply of adenosine triphosphate (ATP)."
+                    },
+                    {
+                        q: "Approximately how long does it take sunlight to travel from the Sun to Earth?",
+                        options: ["8 seconds", "8 minutes", "8 hours", "8 days"],
+                        answer: 1,
+                        hint: "Light travels at 300,000 km/s across 150 million kilometers.",
+                        explanation: "Light takes roughly 8 minutes and 20 seconds to cross 1 Astronomical Unit (93 million miles)."
+                    },
+                    {
+                        q: "Which element has the atomic number 79 and chemical symbol 'Au'?",
+                        options: ["Silver", "Platinum", "Gold", "Mercury"],
+                        answer: 2,
+                        hint: "'Au' comes from the Latin word 'Aurum', meaning shining dawn.",
+                        explanation: "Gold (Au) is a dense, malleable precious metal with atomic number 79."
+                    },
+                    {
+                        q: "Newton's Second Law of Motion is summarized by which famous equation?",
+                        options: ["E = mc²", "F = ma", "V = IR", "p = mv"],
+                        answer: 1,
+                        hint: "Force equals mass times...",
+                        explanation: "F = ma states that the net Force acting on an object equals its mass multiplied by its acceleration."
+                    }
+                ],
+                hard: [
+                    {
+                        q: "Which moon of Saturn has a dense atmosphere and liquid methane lakes?",
+                        options: ["Europa", "Titan", "Enceladus", "Ganymede"],
+                        answer: 1,
+                        hint: "It is Saturn's largest moon and the second-largest moon in the entire solar system.",
+                        explanation: "Titan is the only moon known to have a dense atmosphere and stable liquid hydrocarbon lakes on its surface."
+                    },
+                    {
+                        q: "What phenomenon explains why light from distant galaxies shifts toward longer wavelengths?",
+                        options: ["Rayleigh Scattering", "Cosmological Redshift", "Cherenkov Radiation", "Photoelectric Effect"],
+                        answer: 1,
+                        hint: "As space itself expands, light waves stretch out toward the red end of the spectrum.",
+                        explanation: "Cosmological redshift occurs because the expansion of the universe stretches light wavelengths over vast distances."
+                    },
+                    {
+                        q: "Which enzyme is responsible for unzipping the DNA double helix during replication?",
+                        options: ["DNA Polymerase", "Helicase", "Ligase", "Amylase"],
+                        answer: 1,
+                        hint: "Its name relates to the 'helix' structure it unwinds.",
+                        explanation: "DNA Helicase breaks hydrogen bonds between base pairs to separate the two strands for replication."
+                    },
+                    {
+                        q: "What is the theoretical boundary around a black hole beyond which nothing can escape?",
+                        options: ["Photon Sphere", "Event Horizon", "Singularity", "Schwarzschild Core"],
+                        answer: 1,
+                        hint: "Once crossed, the escape velocity exceeds the speed of light.",
+                        explanation: "The Event Horizon is the 'point of no return' surrounding a black hole."
+                    }
+                ]
+            },
+            geography: {
+                easy: [
+                    {
+                        q: "Which is the largest ocean on Earth?",
+                        options: ["Atlantic Ocean", "Indian Ocean", "Pacific Ocean", "Arctic Ocean"],
+                        answer: 2,
+                        hint: "It covers more than 30% of Earth's entire surface area.",
+                        explanation: "The Pacific Ocean spans over 60 million square miles, making it larger than all landmasses combined."
+                    },
+                    {
+                        q: "What is the capital city of Japan?",
+                        options: ["Kyoto", "Osaka", "Tokyo", "Seoul"],
+                        answer: 2,
+                        hint: "It is the world's most populous metropolitan area.",
+                        explanation: "Tokyo has served as Japan's capital since 1868."
+                    },
+                    {
+                        q: "On which continent is the Sahara Desert located?",
+                        options: ["Asia", "Africa", "South America", "Australia"],
+                        answer: 1,
+                        hint: "It spans across northern countries like Egypt, Algeria, and Morocco.",
+                        explanation: "The Sahara is the largest hot desert in the world, covering much of North Africa."
+                    },
+                    {
+                        q: "Which river is traditionally recognized as the longest in the world?",
+                        options: ["Amazon River", "Nile River", "Yangtze River", "Mississippi River"],
+                        answer: 1,
+                        hint: "It flows northward through northeastern Africa into the Mediterranean Sea.",
+                        explanation: "The Nile River stretches roughly 6,650 km (4,130 miles) through 11 African countries."
+                    },
+                    {
+                        q: "Which country is both an island and a continent?",
+                        options: ["Greenland", "Madagascar", "Australia", "Iceland"],
+                        answer: 2,
+                        hint: "Home to kangaroos, koalas, and the Great Barrier Reef.",
+                        explanation: "Australia is the smallest continent and the largest island nation on Earth."
+                    }
+                ],
+                medium: [
+                    {
+                        q: "What is the capital city of Canada?",
+                        options: ["Toronto", "Vancouver", "Ottawa", "Montreal"],
+                        answer: 2,
+                        hint: "It sits along the border between Ontario and Quebec, not the largest city.",
+                        explanation: "Ottawa was chosen as Canada's capital in 1857 by Queen Victoria."
+                    },
+                    {
+                        q: "Which mountain range separates Europe from Asia?",
+                        options: ["The Alps", "The Urals", "The Carpathians", "The Caucasus"],
+                        answer: 1,
+                        hint: "This range runs north-to-south through western Russia.",
+                        explanation: "The Ural Mountains form the traditional physiographic boundary between Europe and Asia."
+                    },
+                    {
+                        q: "Which South American country has the largest land area?",
+                        options: ["Argentina", "Peru", "Colombia", "Brazil"],
+                        answer: 3,
+                        hint: "Portuguese is its official language.",
+                        explanation: "Brazil covers nearly half of South America's landmass and borders almost every other country on the continent."
+                    },
+                    {
+                        q: "The Strait of Gibraltar connects the Atlantic Ocean to which sea?",
+                        options: ["Red Sea", "Black Sea", "Mediterranean Sea", "North Sea"],
+                        answer: 2,
+                        hint: "It separates Spain in Europe from Morocco in Africa.",
+                        explanation: "The narrow Strait of Gibraltar links the Atlantic Ocean with the Mediterranean Sea."
+                    },
+                    {
+                        q: "Which country contains the most active volcanoes in the world?",
+                        options: ["Japan", "Indonesia", "Iceland", "Chile"],
+                        answer: 1,
+                        hint: "This Southeast Asian archipelago lies directly on the Pacific Ring of Fire.",
+                        explanation: "Indonesia has over 120 active volcanoes due to the collision of multiple tectonic plates."
+                    }
+                ],
+                hard: [
+                    {
+                        q: "Which African country is completely surrounded by South Africa?",
+                        options: ["Eswatini", "Lesotho", "Botswana", "Malawi"],
+                        answer: 1,
+                        hint: "Known as the 'Kingdom in the Sky' because its entire territory sits above 1,000 meters.",
+                        explanation: "Lesotho is an enclaved landlocked country completely encircled by South Africa."
+                    },
+                    {
+                        q: "What is the deepest known oceanic trench on Earth?",
+                        options: ["Java Trench", "Puerto Rico Trench", "Mariana Trench", "Tonga Trench"],
+                        answer: 2,
+                        hint: "Located in the western Pacific Ocean, its Challenger Deep reaches ~11,000 meters.",
+                        explanation: "The Mariana Trench plunges nearly 36,000 feet (11 km) below sea level."
+                    },
+                    {
+                        q: "Which city spans two continents—Europe and Asia—across the Bosphorus Strait?",
+                        options: ["Athens", "Istanbul", "Baku", "Cairo"],
+                        answer: 1,
+                        hint: "Historically known as Byzantium and Constantinople.",
+                        explanation: "Istanbul straddles the Bosphorus Strait, linking the Black Sea and Sea of Marmara across two continents."
+                    },
+                    {
+                        q: "What is the capital city of Kazakhstan?",
+                        options: ["Almaty", "Tashkent", "Astana", "Bishkek"],
+                        answer: 2,
+                        hint: "It replaced Almaty as the capital in 1997 (and was briefly named Nur-Sultan).",
+                        explanation: "Astana is the modern planned capital city of Kazakhstan."
+                    }
+                ]
+            },
+            history: {
+                easy: [
+                    {
+                        q: "In which ancient civilization were the Great Pyramids of Giza built?",
+                        options: ["Mesopotamia", "Ancient Egypt", "Roman Empire", "Ancient Greece"],
+                        answer: 1,
+                        hint: "Built as monumental tombs for pharaohs along the Nile River.",
+                        explanation: "The Pyramids of Giza were constructed during Egypt's Old Kingdom over 4,500 years ago."
+                    },
+                    {
+                        q: "Who was the first human to walk on the Moon in 1969?",
+                        options: ["Buzz Aldrin", "Yuri Gagarin", "Neil Armstrong", "Michael Collins"],
+                        answer: 2,
+                        hint: "He commanded NASA's Apollo 11 mission.",
+                        explanation: "Neil Armstrong stepped onto the lunar surface on July 20, 1969, followed shortly by Buzz Aldrin."
+                    },
+                    {
+                        q: "Who painted the Mona Lisa during the Italian Renaissance?",
+                        options: ["Michelangelo", "Leonardo da Vinci", "Raphael", "Donatello"],
+                        answer: 1,
+                        hint: "He was also famous for anatomical sketches and flying machine designs.",
+                        explanation: "Leonardo da Vinci painted the Mona Lisa in Florence in the early 16th century."
+                    },
+                    {
+                        q: "Which ancient trade network connected China with the Mediterranean world?",
+                        options: ["The Spice Trail", "The Silk Road", "The Amber Route", "The Royal Road"],
+                        answer: 1,
+                        hint: "Named after a lucrative luxury fabric produced in ancient China.",
+                        explanation: "The Silk Road facilitated centuries of trade, cultural exchange, and technological diffusion across Eurasia."
+                    },
+                    {
+                        q: "In what year did World War II end?",
+                        options: ["1918", "1939", "1945", "1950"],
+                        answer: 2,
+                        hint: "It ended six years after Germany's 1939 invasion of Poland.",
+                        explanation: "World War II officially concluded in September 1945 following the surrenders of Germany and Japan."
+                    }
+                ],
+                medium: [
+                    {
+                        q: "Who invented the movable-type mechanical printing press in Europe around 1440?",
+                        options: ["Johannes Gutenberg", "Galileo Galilei", "Isaac Newton", "Marco Polo"],
+                        answer: 0,
+                        hint: "His invention sparked a communication revolution in Mainz, Germany.",
+                        explanation: "Johannes Gutenberg's movable-type press dramatically lowered book costs and accelerated the Renaissance."
+                    },
+                    {
+                        q: "Which South American empire built the mountain citadel of Machu Picchu?",
+                        options: ["Aztec Empire", "Maya Civilization", "Inca Empire", "Olmec Culture"],
+                        answer: 2,
+                        hint: "Their empire stretched along the Andes Mountains in modern-day Peru.",
+                        explanation: "Machu Picchu was built in the 15th century under the Inca emperor Pachacuti."
+                    },
+                    {
+                        q: "What document was signed in England in 1215 limiting the power of the monarchy?",
+                        options: ["The Bill of Rights", "The Magna Carta", "The Domesday Book", "The Treaty of Versailles"],
+                        answer: 1,
+                        hint: "Latin for 'Great Charter', signed by King John at Runnymede.",
+                        explanation: "The Magna Carta established the principle that even the king was subject to the law."
+                    },
+                    {
+                        q: "Which city was destroyed by the eruption of Mount Vesuvius in 79 AD?",
+                        options: ["Athens", "Pompeii", "Carthage", "Sparta"],
+                        answer: 1,
+                        hint: "Volcanic ash preserved its Roman streets, villas, and frescoes for centuries.",
+                        explanation: "Pompeii (alongside Herculaneum) was buried under meters of volcanic ash and pumice in 79 AD."
+                    },
+                    {
+                        q: "Who was the first female aviator to fly solo across the Atlantic Ocean?",
+                        options: ["Bessie Coleman", "Amelia Earhart", "Harriet Quimby", "Valentina Tereshkova"],
+                        answer: 1,
+                        hint: "She completed the historic flight from Newfoundland to Northern Ireland in 1932.",
+                        explanation: "Amelia Earhart became the first woman to fly solo nonstop across the Atlantic in May 1932."
+                    }
+                ],
+                hard: [
+                    {
+                        q: "Which ancient Mesopotamian ruler created one of the earliest written legal codes?",
+                        options: ["Nebuchadnezzar II", "Hammurabi", "Cyrus the Great", "Ashurbanipal"],
+                        answer: 1,
+                        hint: "Carved onto a basalt stele around 1754 BC, famous for 'an eye for an eye'.",
+                        explanation: "King Hammurabi of Babylon enacted 282 laws establishing standardized justice and penalties."
+                    },
+                    {
+                        q: "The Rosetta Stone was crucial in deciphering which ancient writing system?",
+                        options: ["Cuneiform", "Egyptian Hieroglyphs", "Linear B", "Phoenician"],
+                        answer: 1,
+                        hint: "Discovered in 1799, it featured the same decree in three scripts including Ancient Greek.",
+                        explanation: "Jean-François Champollion used the Greek text on the Rosetta Stone to decode Egyptian hieroglyphs in 1822."
+                    },
+                    {
+                        q: "Which treaty ended the Thirty Years' War in Europe in 1648?",
+                        options: ["Treaty of Utrecht", "Peace of Westphalia", "Congress of Vienna", "Treaty of Tordesillas"],
+                        answer: 1,
+                        hint: "It established the modern diplomatic concept of state sovereignty.",
+                        explanation: "The Peace of Westphalia (1648) ended the Thirty Years' War and reshaped European political order."
+                    },
+                    {
+                        q: "Who was the Byzantine Emperor who commissioned the construction of the Hagia Sophia?",
+                        options: ["Constantine I", "Justinian I", "Basil II", "Heraclius"],
+                        answer: 1,
+                        hint: "He also codified Roman law in the 'Corpus Juris Civilis'.",
+                        explanation: "Emperor Justinian I oversaw the completion of Constantinople's Hagia Sophia in 537 AD."
+                    }
+                ]
+            }
+        };
+
+        /**
+         * 3. GAME STATE & CONFIGURATION
+         */
+        const DIFFICULTY_CONFIG = {
+            easy:   { time: 20, multiplier: 1.0, label: 'Cadet' },
+            medium: { time: 15, multiplier: 1.5, label: 'Scholar' },
+            hard:   { time: 12, multiplier: 2.0, label: 'Genius' }
+        };
+
+        const SUBJECT_LABELS = {
+            math: '🧮 Math & Logic',
+            science: '🚀 Science & Space',
+            geography: '🌍 World Geography',
+            history: '🏛️ History & Culture',
+            mixed: '🎲 All-Star Brain Mix'
+        };
+
+        let gameState = {
+            subject: 'math',
+            difficulty: 'easy',
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            lives: 3,
+            streak: 0,
+            maxStreak: 0,
+            correctCount: 0,
+            timer: null,
+            timeLeft: 15,
+            maxTime: 15,
+            isFrozen: false,
+            answered: false,
+            powerUps: { fifty: 1, freeze: 1, hint: 1 },
+            historyLog: []
+        };
+
+        // Load High Score safely from localStorage
+        let highScore = 0;
+        try {
+            highScore = parseInt(localStorage.getItem('brainquest_highscore') || '0', 10);
+        } catch (e) {
+            highScore = 0;
+        }
+        document.getElementById('global-high-score').textContent = highScore.toLocaleString();
+
+        /**
+         * 4. MENU SELECTION HANDLERS
+         */
+        function selectSubject(subject, btnElement) {
+            sfx.click();
+            gameState.subject = subject;
+            document.querySelectorAll('.subject-card').forEach(el => el.classList.remove('selected'));
+            btnElement.classList.add('selected');
+        }
+
+        function selectDifficulty(diff, btnElement) {
+            sfx.click();
+            gameState.difficulty = diff;
+            document.querySelectorAll('.diff-btn').forEach(el => {
+                el.classList.remove('selected', 'bg-emerald-600/30', 'border-emerald-400', 'text-emerald-200',
+                                    'bg-amber-600/30', 'border-amber-400', 'text-amber-200',
+                                    'bg-rose-600/30', 'border-rose-400', 'text-rose-200');
+                el.classList.add('bg-slate-800/70', 'border-slate-700', 'text-slate-300');
+            });
+
+            btnElement.classList.remove('bg-slate-800/70', 'border-slate-700', 'text-slate-300');
+            btnElement.classList.add('selected');
+
+            if (diff === 'easy') {
+                btnElement.classList.add('bg-emerald-600/30', 'border-emerald-400', 'text-emerald-200');
+            } else if (diff === 'medium') {
+                btnElement.classList.add('bg-amber-600/30', 'border-amber-400', 'text-amber-200');
+            } else {
+                btnElement.classList.add('bg-rose-600/30', 'border-rose-400', 'text-rose-200');
+            }
+        }
+
+        function toggleMute() {
+            sfx.muted = !sfx.muted;
+            document.getElementById('icon-sound-on').classList.toggle('hidden', sfx.muted);
+            document.getElementById('icon-sound-off').classList.toggle('hidden', !sfx.muted);
+            if (!sfx.muted) sfx.click();
+        }
+
+        function switchScreen(screenId) {
+            ['screen-menu', 'screen-game', 'screen-summary'].forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.classList.remove('screen-enter');
+                    void el.offsetWidth; // trigger reflow for animation
+                    el.classList.add('screen-enter');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        }
+
+        function returnToMenu() {
+            clearInterval(gameState.timer);
+            sfx.click();
+            switchScreen('screen-menu');
+        }
+
+        /**
+         * 5. QUESTION POOL GENERATOR & SHUFFLER
+         */
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function buildQuestionDeck(subject, difficulty) {
+            let pool = [];
+            if (subject === 'mixed') {
+                ['math', 'science', 'geography', 'history'].forEach(subj => {
+                    const items = QUESTION_BANK[subj][difficulty].map(q => ({ ...q, category: SUBJECT_LABELS[subj] }));
+                    pool.push(...items);
+                });
+            } else {
+                pool = QUESTION_BANK[subject][difficulty].map(q => ({ ...q, category: SUBJECT_LABELS[subject] }));
+            }
+
+            // Shuffle questions and limit round to up to 8 questions for crisp arcade pacing
+            const selectedQuestions = shuffleArray(pool).slice(0, 8);
+
+            // Also shuffle answer options per question while tracking the right answer index
+            return selectedQuestions.map(item => {
+                const mappedOptions = item.options.map((text, idx) => ({
+                    text,
+                    isCorrect: idx === item.answer
+                }));
+                const shuffledOptions = shuffleArray(mappedOptions);
+                return {
+                    ...item,
+                    options: shuffledOptions.map(o => o.text),
+                    answer: shuffledOptions.findIndex(o => o.isCorrect)
+                };
+            });
+        }
+
+        /**
+         * 6. GAMEPLAY LOOP & MECHANICS
+         */
+        function startGame() {
+            sfx.click();
+            const config = DIFFICULTY_CONFIG[gameState.difficulty];
+            const questions = buildQuestionDeck(gameState.subject, gameState.difficulty);
+
+            gameState = {
+                ...gameState,
+                questions,
+                currentIndex: 0,
+                score: 0,
+                lives: 3,
+                streak: 0,
+                maxStreak: 0,
+                correctCount: 0,
+                maxTime: config.time,
+                timeLeft: config.time,
+                isFrozen: false,
+                answered: false,
+                powerUps: { fifty: 1, freeze: 1, hint: 1 },
+                historyLog: []
+            };
+
+            // Reset HUD visuals
+            updateLivesUI();
+            updateScoreUI();
+            updatePowerUpButtons();
+            document.getElementById('q-total').textContent = questions.length;
+
+            switchScreen('screen-game');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            clearInterval(gameState.timer);
+            const qObj = gameState.questions[gameState.currentIndex];
+            gameState.answered = false;
+            gameState.isFrozen = false;
+            gameState.timeLeft = gameState.maxTime;
+
+            // Update Top HUD
+            document.getElementById('q-current').textContent = gameState.currentIndex + 1;
+            document.getElementById('subject-tag').textContent = qObj.category;
+            document.getElementById('question-text').textContent = qObj.q;
+
+            // Reset Hint & Feedback Drawers
+            document.getElementById('hint-box').classList.add('hidden');
+            document.getElementById('feedback-drawer').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+
+            // Render Answer Option Buttons
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            const letters = ['A', 'B', 'C', 'D'];
+
+            qObj.options.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn-arcade option-btn w-full text-left p-4 rounded-2xl bg-slate-800/90 border-2 border-slate-600/70 hover:border-indigo-400 text-white font-medium flex items-center gap-3.5 transition';
+                btn.dataset.index = index;
+                btn.onclick = () => handleAnswer(index);
+
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-lg bg-slate-700/90 text-indigo-300 font-bold arcade-font flex items-center justify-center shrink-0 border border-slate-600">
+                        ${letters[index]}
+                    </span>
+                    <span class="text-base sm:text-lg leading-snug">${optText}</span>
+                `;
+                grid.appendChild(btn);
+            });
+
+            // Re-enable unused power-ups for the new question
+            updatePowerUpButtons();
+
+            // Start Countdown Timer
+            const timerBar = document.getElementById('timer-bar');
+            timerBar.classList.remove('timer-frozen', 'from-rose-500', 'to-red-600');
+            timerBar.classList.add('from-emerald-400', 'via-cyan-400', 'to-indigo-500');
+            timerBar.style.width = '100%';
+            document.getElementById('timer-text').textContent = `${gameState.timeLeft.toFixed(1)}s`;
+
+            let lastTickSecond = Math.ceil(gameState.timeLeft);
+
+            gameState.timer = setInterval(() => {
+                if (gameState.isFrozen || gameState.answered) return;
+
+                gameState.timeLeft -= 0.1;
+                if (gameState.timeLeft <= 0) {
+                    gameState.timeLeft = 0;
+                    clearInterval(gameState.timer);
+                    handleTimeout();
+                }
+
+                // Update Timer Bar Width & Color Warning
+                const pct = (gameState.timeLeft / gameState.maxTime) * 100;
+                timerBar.style.width = `${pct}%`;
+                document.getElementById('timer-text').textContent = `${gameState.timeLeft.toFixed(1)}s`;
+
+                if (pct < 30) {
+                    timerBar.classList.remove('from-emerald-400', 'via-cyan-400', 'to-indigo-500');
+                    timerBar.classList.add('from-rose-500', 'to-red-600');
+                    const currentSec = Math.ceil(gameState.timeLeft);
+                    if (currentSec < lastTickSecond && currentSec > 0) {
+                        sfx.tick();
+                        lastTickSecond = currentSec;
+                    }
+                }
+            }, 100);
+        }
+
+        function handleAnswer(selectedIndex) {
+            if (gameState.answered) return;
+            gameState.answered = true;
+            clearInterval(gameState.timer);
+
+            const qObj = gameState.questions[gameState.currentIndex];
+            const isCorrect = selectedIndex === qObj.answer;
+            const optionButtons = document.querySelectorAll('.option-btn');
+
+            // Lock all buttons and reveal right/wrong styling
+            optionButtons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === qObj.answer) {
+                    btn.classList.add('option-correct');
+                } else if (idx === selectedIndex && !isCorrect) {
+                    btn.classList.add('option-wrong');
+                }
+            });
+
+            let pointsEarned = 0;
+
+            if (isCorrect) {
+                gameState.streak++;
+                gameState.maxStreak = Math.max(gameState.maxStreak, gameState.streak);
+                gameState.correctCount++;
+
+                // Calculate Score: Base (100) + Time Bonus (up to 50) * Difficulty * Streak Multiplier
+                const diffMult = DIFFICULTY_CONFIG[gameState.difficulty].multiplier;
+                const streakMult = 1 + (gameState.streak - 1) * 0.25;
+                const timeBonus = Math.round((gameState.timeLeft / gameState.maxTime) * 50);
+                pointsEarned = Math.round((100 + timeBonus) * diffMult * streakMult);
+
+                gameState.score += pointsEarned;
+                sfx.correct(gameState.streak);
+                spawnScorePopup(`+${pointsEarned}`);
+                showFeedbackDrawer(true, pointsEarned, qObj.explanation);
+            } else {
+                gameState.streak = 0;
+                gameState.lives--;
+                sfx.wrong();
+                updateLivesUI(true);
+                showFeedbackDrawer(false, 0, qObj.explanation);
+            }
+
+            // Record for End-of-Game Study Summary
+            gameState.historyLog.push({
+                question: qObj.q,
+                category: qObj.category,
+                userAnswer: qObj.options[selectedIndex],
+                correctAnswer: qObj.options[qObj.answer],
+                isCorrect,
+                explanation: qObj.explanation
+            });
+
+            updateScoreUI();
+            disablePowerUpsDuringReview();
+            prepareNextStep();
+        }
+
+        function handleTimeout() {
+            if (gameState.answered) return;
+            gameState.answered = true;
+
+            const qObj = gameState.questions[gameState.currentIndex];
+            const optionButtons = document.querySelectorAll('.option-btn');
+
+            optionButtons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === qObj.answer) {
+                    btn.classList.add('option-correct');
+                }
+            });
+
+            gameState.streak = 0;
+            gameState.lives--;
+            sfx.wrong();
+            updateLivesUI(true);
+            updateScoreUI();
+
+            showFeedbackDrawer(false, 0, `Time ran out! ${qObj.explanation}`, "⏰ Time's Up!");
+
+            gameState.historyLog.push({
+                question: qObj.q,
+                category: qObj.category,
+                userAnswer: "No Answer (Time Expired)",
+                correctAnswer: qObj.options[qObj.answer],
+                isCorrect: false,
+                explanation: qObj.explanation
+            });
+
+            disablePowerUpsDuringReview();
+            prepareNextStep();
+        }
+
+        function prepareNextStep() {
+            const nextBtn = document.getElementById('next-btn');
+            const nextLabel = document.getElementById('next-btn-label');
+            nextBtn.classList.remove('hidden');
+
+            if (gameState.lives <= 0 || gameState.currentIndex >= gameState.questions.length - 1) {
+                nextLabel.textContent = "View Results & Study Guide";
+            } else {
+                nextLabel.textContent = "Next Question";
+            }
+        }
+
+        function nextQuestion() {
+            sfx.click();
+            if (gameState.lives <= 0 || gameState.currentIndex >= gameState.questions.length - 1) {
+                endGame();
+            } else {
+                gameState.currentIndex++;
+                renderQuestion();
+            }
+        }
+
+        /**
+         * 7. POWER-UP LIFELINES (50/50, FREEZE, HINT)
+         */
+        function usePowerUp(type) {
+            if (gameState.answered || gameState.powerUps[type] <= 0) return;
+
+            const qObj = gameState.questions[gameState.currentIndex];
+            sfx.powerup();
+
+            if (type === 'fifty') {
+                // Find all wrong indices and randomly eliminate 2 of them
+                const wrongIndices = [0, 1, 2, 3].filter(i => i !== qObj.answer);
+                const toEliminate = shuffleArray(wrongIndices).slice(0, 2);
+                const buttons = document.querySelectorAll('.option-btn');
+
+                toEliminate.forEach(idx => {
+                    buttons[idx].classList.add('option-eliminated');
+                    buttons[idx].disabled = true;
+                });
+                gameState.powerUps.fifty--;
+            } 
+            else if (type === 'freeze') {
+                gameState.isFrozen = true;
+                const timerBar = document.getElementById('timer-bar');
+                timerBar.classList.add('timer-frozen');
+                document.getElementById('timer-text').textContent = "❄️ FROZEN";
+                gameState.powerUps.freeze--;
+            } 
+            else if (type === 'hint') {
+                document.getElementById('hint-text').textContent = qObj.hint;
+                document.getElementById('hint-box').classList.remove('hidden');
+                gameState.powerUps.hint--;
+            }
+
+            updatePowerUpButtons();
+        }
+
+        function updatePowerUpButtons() {
+            ['fifty', 'freeze', 'hint'].forEach(type => {
+                const btn = document.getElementById(`pu-${type}`);
+                const countBadge = document.getElementById(`count-${type}`);
+                const remaining = gameState.powerUps[type];
+                countBadge.textContent = remaining;
+                btn.disabled = remaining <= 0 || (type === 'freeze' && gameState.isFrozen);
+            });
+        }
+
+        function disablePowerUpsDuringReview() {
+            ['fifty', 'freeze', 'hint'].forEach(type => {
+                document.getElementById(`pu-${type}`).disabled = true;
+            });
+        }
+
+        /**
+         * 8. UI FEEDBACK & HUD UPDATERS
+         */
+        function updateLivesUI(lostOne = false) {
+            const container = document.getElementById('lives-container');
+            const hearts = container.querySelectorAll('.heart-icon');
+            hearts.forEach((heart, idx) => {
+                if (idx >= gameState.lives) {
+                    if (lostOne && idx === gameState.lives) {
+                        heart.classList.add('heart-lost');
+                    } else {
+                        heart.style.opacity = '0.25';
+                        heart.style.filter = 'grayscale(100%)';
+                    }
+                } else {
+                    heart.classList.remove('heart-lost');
+                    heart.style.opacity = '1';
+                    heart.style.filter = 'none';
+                }
+            });
+        }
+
+        function updateScoreUI() {
+            document.getElementById('current-score').textContent = gameState.score.toLocaleString();
+            const mult = (1 + (gameState.streak > 0 ? (gameState.streak - 1) * 0.25 : 0)).toFixed(2);
+            const streakBadge = document.getElementById('streak-badge');
+            document.getElementById('streak-text').textContent = `${mult}x (${gameState.streak})`;
+
+            if (gameState.streak >= 2) {
+                streakBadge.classList.add('scale-110', 'bg-amber-500/40');
+                setTimeout(() => streakBadge.classList.remove('scale-110'), 200);
+            } else {
+                streakBadge.classList.remove('bg-amber-500/40');
+            }
+        }
+
+        function spawnScorePopup(text) {
+            const container = document.getElementById('score-container');
+            const popup = document.createElement('div');
+            popup.className = 'score-popup text-emerald-300 text-lg right-0 top-0';
+            popup.textContent = text;
+            container.appendChild(popup);
+            setTimeout(() => popup.remove(), 950);
+        }
+
+        function showFeedbackDrawer(isCorrect, points, explanation, customTitle = null) {
+            const drawer = document.getElementById('feedback-drawer');
+            const title = document.getElementById('feedback-title');
+            const ptsBadge = document.getElementById('feedback-points');
+            const expText = document.getElementById('feedback-explanation');
+
+            drawer.classList.remove('hidden', 'bg-emerald-950/70', 'border-emerald-500/50', 'bg-rose-950/70', 'border-rose-500/50');
+
+            if (isCorrect) {
+                drawer.classList.add('bg-emerald-950/70', 'border-emerald-500/50');
+                title.textContent = customTitle || "✨ Spot On!";
+                title.className = "font-bold text-base arcade-font text-emerald-300";
+                ptsBadge.textContent = `+${points} PTS`;
+                ptsBadge.className = "text-xs font-bold px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300";
+            } else {
+                drawer.classList.add('bg-rose-950/70', 'border-rose-500/50');
+                title.textContent = customTitle || "❌ Not Quite!";
+                title.className = "font-bold text-base arcade-font text-rose-300";
+                ptsBadge.textContent = "STREAK RESET";
+                ptsBadge.className = "text-xs font-bold px-2.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300";
+            }
+
+            expText.textContent = explanation;
+        }
+
+        /**
+         * 9. END-OF-GAME SUMMARY & EDUCATIONAL REVIEW
+         */
+        function endGame() {
+            clearInterval(gameState.timer);
+            const totalAnswered = gameState.historyLog.length;
+            const accuracy = totalAnswered > 0 ? Math.round((gameState.correctCount / totalAnswered) * 100) : 0;
+            const survived = gameState.lives > 0;
+
+            sfx.gameOver(survived && accuracy >= 50);
+
+            // Check & Save High Score
+            let isNewRecord = false;
+            if (gameState.score > highScore) {
+                highScore = gameState.score;
+                isNewRecord = true;
+                try {
+                    localStorage.setItem('brainquest_highscore', highScore.toString());
+                } catch (e) {}
+                document.getElementById('global-high-score').textContent = highScore.toLocaleString();
+            }
+
+            // Populate Summary Header
+            document.getElementById('new-record-banner').classList.toggle('hidden', !isNewRecord);
+            document.getElementById('summary-badge').textContent = survived ? (accuracy >= 80 ? '🏆' : '🌟') : '📚';
+            document.getElementById('summary-heading').textContent = survived ? 'Quest Complete!' : 'Out of Hearts!';
+            document.getElementById('summary-subheading').textContent = survived
+                ? `You conquered ${gameState.correctCount} of ${totalAnswered} questions in ${SUBJECT_LABELS[gameState.subject]}.`
+                : 'Every mistake is a stepping stone to mastery. Review the explanations below!';
+
+            // Populate Stats
+            document.getElementById('stat-score').textContent = gameState.score.toLocaleString();
+            document.getElementById('stat-accuracy').textContent = `${accuracy}%`;
+            document.getElementById('stat-streak').textContent = gameState.maxStreak;
+
+            // Assign Mastery Rank
+            let rank = "Apprentice";
+            if (accuracy >= 90 && survived) rank = "Grandmaster";
+            else if (accuracy >= 75) rank = "Professor";
+            else if (accuracy >= 50) rank = "Scholar";
+            document.getElementById('stat-rank').textContent = rank;
+
+            // Build Detailed Educational Review Cards
+            const reviewList = document.getElementById('review-list');
+            reviewList.innerHTML = '';
+
+            gameState.historyLog.forEach((entry, idx) => {
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-2xl border ${entry.isCorrect ? 'bg-slate-800/60 border-emerald-500/30' : 'bg-rose-950/30 border-rose-500/40'}`;
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2 mb-1.5">
+                        <span class="text-xs font-bold uppercase tracking-wider ${entry.isCorrect ? 'text-emerald-400' : 'text-rose-400'}">
+                            ${entry.isCorrect ? '✅ Correct' : '❌ Missed'} • Q${idx + 1} (${entry.category})
+                        </span>
+                    </div>
+                    <p class="font-bold text-white text-sm sm:text-base mb-2">${entry.question}</p>
+                    <div class="text-xs sm:text-sm space-y-1 mb-2.5">
+                        ${!entry.isCorrect ? `<div class="text-rose-300"><span class="font-semibold">Your Answer:</span> ${entry.userAnswer}</div>` : ''}
+                        <div class="text-emerald-300"><span class="font-semibold">Correct Answer:</span> ${entry.correctAnswer}</div>
+                    </div>
+                    <div class="text-xs text-slate-300 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/60">
+                        <span class="font-bold text-indigo-300">Why:</span> ${entry.explanation}
+                    </div>
+                `;
+                reviewList.appendChild(card);
+            });
+
+            switchScreen('screen-summary');
+        }
+    </script>
+
+
+<footer class="game-footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <span class="game-title">GAME TITLE</span>
+      <span class="version-badge">v1.0.0</span>
+    </div>
+
+    <nav class="footer-links">
+      <button id="btn-controls" class="footer-btn">Controls</button>
+      <button id="btn-credits" class="footer-btn">Credits</button>
+      <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+
+    <div class="footer-copyright">
+      &copy; <span id="year"></span> Your Studio Name. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+
+
+</body>
+</html>
